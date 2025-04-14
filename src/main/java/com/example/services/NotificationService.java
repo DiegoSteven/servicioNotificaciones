@@ -5,6 +5,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Map;
+
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,9 +16,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.Dto.Typed;
 import com.example.models.*;
+import com.example.services.Notificators.MailService;
+import com.example.Util.NotificationFormatter;
+import com.example.websocket.NotificationWebSocketHandler;
 
 import com.example.repositories.NotificationRepository;
 import com.example.repositories.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.lang.reflect.Field;
 
 import jakarta.persistence.EntityManager;
@@ -35,8 +43,7 @@ public class NotificationService {
     @Autowired
     private NotificatorManager notificatorManager;
 
-    @Autowired
-    private NotificationFormatter formatter;
+ 
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -171,5 +178,45 @@ public class NotificationService {
             }
         }
     }
+
+    @Autowired
+    private MailService mailService;
+
+    public void processEvent(Event event, Device device, Position position) {
+        List<NotificationModel> notifications = notificationRepository.findByTypeAndAlwaysTrue(event.getType());
+        System.out.println("🟢 Se llamó a processEvent con tipo: " + event.getType());
+
+        for (NotificationModel notification : notifications) {
+            String message = NotificationFormatter.formatMessage(event, device, position);
+
+           
+            if (notification.getNotificators().contains("mail")) {
+                System.out.println("Contiene Email");
+                System.out.println("🔔 [Mail] Notificación Mail:\n" + message);
+                String correoDestino = "acrdkr@gmail.com"; // TODO: dinámica
+                System.out.println("🌐 Enviando al WebSocket: " + message);
+
+                mailService.send(correoDestino, "📢 Evento: " + event.getType(), message);
+            }
+
+            // Notificación web real vía WebSocket
+            if (notification.getNotificators().contains("web")) {
+                event.setMessage(message);
+                System.out.println("🔔 [WEB] Notificación web:\n" + message);
+            
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    String json = mapper.writeValueAsString(Map.of("message", message));
+                    System.out.println("🌐 Enviando al WebSocket: " + json);
+                    NotificationWebSocketHandler.broadcast(json);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            
+
+        }
+    }
+
 
 }

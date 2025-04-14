@@ -8,10 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+
 @Repository
 public interface NotificationRepository extends JpaRepository<NotificationModel, Long> {
 
     List<NotificationModel> findByType(String type);
+    List<NotificationModel> findByTypeAndAlwaysTrue(String type);
 
     @Query(value = """
                 SELECT n.* FROM tc_notifications n

@@ -2,6 +2,11 @@ package com.example.models;
 
 import jakarta.persistence.*;
 import java.util.Date;
+import com.example.Util.MapToStringConverter;
+
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "tc_events")
@@ -27,6 +32,16 @@ public class Event {
 
     @Column(name = "eventtime")
     private Date eventTime;
+
+    @Convert(converter = MapToStringConverter.class)
+    private Map<String, Object> attributes;
+
+    @Transient
+    @JsonProperty("message")
+    private String message;
+
+
+
 
     public Event() {
         this.eventTime = new Date();
@@ -121,4 +136,10 @@ public class Event {
     public void setEventTime(Date eventTime) {
         this.eventTime = eventTime;
     }
+    public Map<String, Object> getAttributes() { return attributes; }
+    public void setAttributes(Map<String, Object> attributes) { this.attributes = attributes; }
+
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }

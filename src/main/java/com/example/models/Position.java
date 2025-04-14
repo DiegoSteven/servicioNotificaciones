@@ -3,7 +3,10 @@ package com.example.models;
 import jakarta.persistence.*;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Table(name = "tc_positions")
 public class Position {
 
